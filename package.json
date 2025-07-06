@@ -1,0 +1,23 @@
+{
+  "name": "react-procedural-scroller",
+  "version": "1.0.0",
+  "description": "A high-performance virtualised scroller component for rendering infinite, procedurally generated data sets – ideal for use cases like endlessly scrollable timelines, dates, or number sequences.",
+  "main": "./dist/src/index.js",
+  "scripts": {
+    "test": "echo no tests yet...",
+    "build": "tsc"
+  },
+  "author": "",
+  "license": "ISC",
+  "peerDependencies" : {
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.1.8",
+    "@types/react-dom": "^19.1.6",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "typescript": "^5.8.3"
+  }
+}
