@@ -1,0 +1,55 @@
+{
+  "name": "react-procedural-scroller",
+  "version": "1.0.0",
+  "description": "A virtualised scroller component for rendering infinite, procedurally generated data sets – ideal for use cases like endlessly scrollable timelines, dates, or number sequences.",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "rm -rf dist && tsc --noEmit && tsup",
+    "format": "npx prettier . --write",
+    "test": "echo no tests yet...",
+    "lint": "eslint src"
+  },
+  "sideEffects": false,
+  "author": "easynow112",
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "TODO - github"
+  },
+  "bugs": {
+    "url": "TODO - github issues"
+  },
+  "keywords": [
+    "TODO"
+  ],
+  "homepage": "TODO - github readme",
+  "peerDependencies": {
+    "react": ">=16.8.0",
+    "react-dom": ">=16.8.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.32.0",
+    "@types/react": "^19.1.8",
+    "@types/react-dom": "^19.1.6",
+    "eslint": "^9.32.0",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "prettier": "^3.6.2",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "tsup": "^8.5.0",
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.38.0"
+  }
+}
