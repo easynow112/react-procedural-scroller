@@ -45,11 +45,10 @@ export const useProceduralScroller = <
 > => {
   /*
    * Derived State:
-   *
-   * `rangeScaledSizes` maps each section of the virtualized scroller (padding, content)
-   *  to a normalized size (height/width) value relative to the container's total size (height/width).
-   *
+   * `rangeScaledSizes` maps each section of the virtualized scroller (padding, content) to a normalized height/width
+   *    value relative to the container's total height/width.
    * `dimensions` selects DOM scroll properties based on scroll direction, abstracting axis-specific access.
+   * `minIndex` / `maxIndex` are the optional bounds of items to render.
    */
   const minIndex = useMemo((): Integer | null => {
     if (typeof minIndexInput === "number") {
@@ -109,6 +108,8 @@ export const useProceduralScroller = <
    * `scroll` stores scroll alignment and index to preserve visible position during list updates.
    * `scrollResetting` is used to suppress scroll handlers whilst a list update is in progress.
    * `containerRef` references the container DOM element.
+   * `scrollToIndexDebounceRef` stores the timeout ID used to detect the end of smooth-scroll animations: when no
+   *    scroll event occurs for 100ms, the animation is considered complete.
    */
   const scroll = useRef<Scroll>(
     asScroll({
@@ -120,6 +121,22 @@ export const useProceduralScroller = <
   const containerRef = useRef<ContainerType>(null);
   const scrollToIndexDebounceRef = useRef<number | null>(null);
 
+  /*
+   * State:
+   *
+   * Two item stacks (`itemStackA` and `itemStackB`) are used for double buffering:
+   * - One stack stores the currently displayed items in the container.
+   * - The other stack stores items for a pending scrollToIndex animation, allowing
+   *   the container to jump between stacks without rendering all intermediate items.
+   *
+   * `itemStackPointer` (0 or 1) indicates which stack is currently active for display.
+   *
+   * `items` / `setItems` / `getPrimaryRef` refer to the active stack.
+   * `secondaryItems` / `setSecondaryItems` / `getSecondaryRef` refer to the inactive stack.
+   *
+   * `mergedIndexes` is the array of item indexes returned by the hook for the library consumer
+   *    to render DOM elements. It combines the indexes from both stacks into a single list
+   */
   const [scrollToIndexInput, setScrollToIndexInput] =
     useState<ScrollToIndexInput | null>(null);
   const [itemStackPointer, setItemStackPointer] = useState<0 | 1>(0);
@@ -173,6 +190,19 @@ export const useProceduralScroller = <
     () => itemStacks[Number(!itemStackPointer)].getRef,
     [itemStackPointer, itemStacks],
   );
+  const mergedIndexes = useMemo((): Integer[] => {
+    return mergeConsecutiveIntegerArrays(
+      items?.indexes || [],
+      secondaryItems?.indexes || [],
+    );
+  }, [items, secondaryItems]);
+
+  /*
+   * Item ref accessors:
+   *
+   * `getRef` returns the element ref for a given index from either item stack.
+   * `getRefOrError` behaves like `getRef` but throws an error if no ref is found.
+   */
   const getRef: UseElementRefMapResult<ItemType>["getRef"] = useCallback(
     (index) => {
       const primaryRef = getPrimaryRef(index);
@@ -191,7 +221,7 @@ export const useProceduralScroller = <
     useCallback(
       (index) => {
         const ref = getRef(index);
-        if (ref) {
+        if (ref?.current) {
           return ref;
         }
         throw new ProceduralScrollerError("Could not find ref", { index, ref });
@@ -200,7 +230,8 @@ export const useProceduralScroller = <
     );
 
   /*
-   * Helper to update `items` state while preserving scroll position:
+   * `updateItems` recalculates the active items in the container based on the updated scroll position,
+   *    It also adjusts the container's scroll offset, creating an illusion of continuous scrolling.
    */
   const updateItems = useCallback(
     (newScroll: Scroll, container: ContainerType) => {
@@ -227,6 +258,10 @@ export const useProceduralScroller = <
     ],
   );
 
+  /*
+   * `completeScrollToIndex` finalizes a `scrollToIndex` operation by swapping the active item stacks
+   *    while keeping the container scroll consistent.
+   */
   const completeScrollToIndex = useCallback(() => {
     scrollToIndexDebounceRef.current = null;
     const container = containerRef.current;
@@ -251,17 +286,10 @@ export const useProceduralScroller = <
     setScrollToIndexInput(null);
   }, [scrollToIndexInput, setItems]);
 
-  const mergedIndexes = useMemo((): Integer[] => {
-    return mergeConsecutiveIntegerArrays(
-      items?.indexes || [],
-      secondaryItems?.indexes || [],
-    );
-  }, [items, secondaryItems]);
-
   /*
    * Container onScroll logic:
    *
-   * If the scroll position moves outside the current content range, this triggers
+   * If the scroll position moves outside the 'contentItem' range, this triggers
    * a scroll reset to realign the viewport and re-render items, creating an illusion
    * of continuous scrolling.
    */
@@ -356,6 +384,11 @@ export const useProceduralScroller = <
 
   /*
    * External API for manually scrolling to a specific item by index and alignment.
+   * The scrollToIndex function works as follows:
+   * 1.) The secondary item stack is updated to contain the target items.
+   * 2.) Following this state update, the browser 'scrollTo' api is used to scroll the container to the target position.
+   * 3.) The `completeScrollToIndex` function is called to finalise the scroll and swap the item stacks such that the
+   *   one containing the target items is now the primary.
    */
   const scrollToIndex = useCallback(
     (input: ScrollToIndexInput) => {
@@ -402,6 +435,10 @@ export const useProceduralScroller = <
     ],
   );
 
+  /*
+   * This effect runs immediately after `scrollToIndex` updates `secondaryItems`.
+   * Its role is to carry out the actual DOM-level scroll:
+   */
   useEffect(() => {
     if (!secondaryItems || !scrollToIndexInput) return;
     const itemRef = getRefOrError(scrollToIndexInput.index);
@@ -436,7 +473,7 @@ export const useProceduralScroller = <
   ]);
 
   /*
-   * Result:
+   * Hook return value:
    */
   if (items) {
     return {
