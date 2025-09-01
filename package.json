@@ -1,7 +1,7 @@
 {
   "name": "react-procedural-scroller",
   "version": "1.0.0",
-  "description": "A virtualised scroller component for rendering infinite, procedurally generated data sets – ideal for use cases like endlessly scrollable timelines, dates, or number sequences.",
+  "description": "A headless React hook for building infinite scroller components that display procedurally generated data, perfect for use cases like date scrollers, where values are generated dynamically rather than fetched from a dataset. Notable features include: full row virtualization for buttery-smooth performance, support for vertical and horizontal layouts, and a scrollTo API that enables programmatic scrolling, supporting both instant and smooth-scroll modes.",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -9,12 +9,16 @@
   "exports": {
     ".": {
       "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
+      "require": "./dist/index.cjs",
+      "types": "./dist/index.d.ts"
     }
   },
   "files": [
     "dist"
   ],
+  "engines": {
+    "node": ">=16"
+  },
   "scripts": {
     "build": "rm -rf dist && tsc --noEmit && tsup",
     "format": "npx prettier . --write",
@@ -26,15 +30,27 @@
   "license": "ISC",
   "repository": {
     "type": "git",
-    "url": "TODO - github"
+    "url": "https://github.com/easynow112/react-procedural-scroller"
   },
   "bugs": {
-    "url": "TODO - github issues"
+    "url": "https://github.com/easynow112/react-procedural-scroller/issues"
   },
   "keywords": [
-    "TODO"
+    "react",
+    "procedural-scroller",
+    "date-scroller",
+    "infinite-scroller",
+    "virtualized",
+    "bi-directional",
+    "multi-directional",
+    "horizontal-scroll",
+    "vertical-scroll",
+    "scroll-into-view",
+    "scroll-to",
+    "headless",
+    "hook"
   ],
-  "homepage": "TODO - github readme",
+  "homepage": "https://github.com/easynow112/react-procedural-scroller",
   "peerDependencies": {
     "react": ">=16.8.0",
     "react-dom": ">=16.8.0"
