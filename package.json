@@ -1,16 +1,16 @@
 {
   "name": "react-procedural-scroller",
   "version": "1.0.0",
-  "description": "A headless React hook for building infinite scroller components that display procedurally generated data, perfect for use cases like date scrollers, where values are generated dynamically rather than fetched from a dataset. Notable features include: full row virtualization for buttery-smooth performance, support for vertical and horizontal layouts, and a scrollTo API that enables programmatic scrolling, supporting both instant and smooth-scroll modes.",
+  "description": "A headless React hook for building infinite scroller components that display procedurally generated data, perfect for use cases like date scrollers, where row data is generated dynamically rather than fetched from a dataset. Notable features include: full row virtualization for buttery-smooth performance, support for vertical and horizontal layouts, and a scrollToIndex API for instant or smooth programmatic scrolling.",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
-      "require": "./dist/index.cjs",
-      "types": "./dist/index.d.ts"
+      "require": "./dist/index.cjs"
     }
   },
   "files": [
