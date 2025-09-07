@@ -7,7 +7,12 @@ export type UseElementRefMapResult<ElementType> = {
     ref: RefObject<ElementType | null>,
   ) => RefObject<ElementType | null>;
   getRef: (key: string | number) => RefObject<ElementType | null> | undefined;
-  getRefOrError: (key: string | number) => RefObject<ElementType | null>;
+  getRefOrError: <RequireNonNull extends boolean>(
+    key: string | number,
+    requireNonNull: RequireNonNull,
+  ) => RequireNonNull extends true
+    ? RefObject<ElementType>
+    : RefObject<ElementType | null>;
   getAllRefs: () => Record<string, RefObject<ElementType | null>>;
   clearRefs: () => void;
 };

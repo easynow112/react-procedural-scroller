@@ -4,6 +4,7 @@ import { Dispatch, RefObject, SetStateAction } from "react";
 import { Scroll } from "../scroll";
 import { Items } from "../items";
 import { Integer } from "../number/integer";
+import { NonNegativeReal } from "../number/non-negative-real";
 
 export type UseItemStackProps<ContainerType> = {
   dimensions: Dimensions;
@@ -13,11 +14,17 @@ export type UseItemStackProps<ContainerType> = {
   getMinItemSize: (index: number) => number;
   minIndex: Integer | null;
   maxIndex: Integer | null;
+  initialContainerHeight: NonNegativeReal | null;
 };
 
 export type UseItemStackResult<ItemType> = {
   items: Items | null;
   setItems: Dispatch<SetStateAction<Items | null>>;
   getRef: (key: string | number) => RefObject<ItemType | null> | undefined;
-  getRefOrError: (key: string | number) => RefObject<ItemType | null>;
+  getRefOrError: <RequireNonNull extends boolean>(
+    key: string | number,
+    requireNonNull: RequireNonNull,
+  ) => RequireNonNull extends true
+    ? RefObject<ItemType>
+    : RefObject<ItemType | null>;
 };

@@ -18,6 +18,7 @@ export type UseProceduralScrollerProps = {
     end: number;
   };
   scrollDirection?: "vertical" | "horizontal";
+  initialContainerHeight?: number;
 };
 
 export type UseProceduralScrollerResult<ContainerType, ItemType> = {
@@ -25,7 +26,7 @@ export type UseProceduralScrollerResult<ContainerType, ItemType> = {
   container: {
     ref: RefObject<ContainerType | null>;
   };
-  rows:
+  items:
     | {
         index: number;
         ref: RefObject<ItemType | null>;

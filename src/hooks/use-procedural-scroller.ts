@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  RefObject,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { Scroll } from "../types/scroll";
 import { Integer } from "../types/number/integer";
 import { getItems } from "../lib/items";
@@ -21,6 +28,7 @@ import { mergeConsecutiveIntegerArrays } from "../lib/array";
 import { UseElementRefMapResult } from "../types/hooks/use-element-ref-map";
 import { ProceduralScrollerError } from "../lib/error";
 import { getScrollLength, scrollToIndexInputToScroll } from "../lib/scroll";
+import { NonNegativeReal } from "../types/number/non-negative-real";
 
 export const useProceduralScroller = <
   ContainerType extends HTMLElement,
@@ -39,6 +47,7 @@ export const useProceduralScroller = <
   scrollDirection = "vertical",
   minIndex: minIndexInput,
   maxIndex: maxIndexInput,
+  initialContainerHeight: initialContainerHeightInput,
 }: UseProceduralScrollerProps): UseProceduralScrollerResult<
   ContainerType,
   ItemType
@@ -49,7 +58,16 @@ export const useProceduralScroller = <
    *    value relative to the container's total height/width.
    * `dimensions` selects DOM scroll properties based on scroll direction, abstracting axis-specific access.
    * `minIndex` / `maxIndex` are the optional bounds of items to render.
+   * `initialContainerHeight` is an optional prop that allows items to render on the first page load
+   *    without waiting for the container to mount and be measured.
    */
+  const initialContainerHeight = useMemo((): NonNegativeReal | null => {
+    try {
+      return asNonNegativeReal(initialContainerHeightInput as number);
+    } catch {
+      return null;
+    }
+  }, [initialContainerHeightInput]);
   const minIndex = useMemo((): Integer | null => {
     if (typeof minIndexInput === "number") {
       if (typeof maxIndexInput === "number" && minIndexInput > maxIndexInput) {
@@ -150,6 +168,7 @@ export const useProceduralScroller = <
     getMinItemSize,
     minIndex,
     maxIndex,
+    initialContainerHeight,
   });
   const itemStackB = useItemStack<ContainerType, ItemType>({
     dimensions,
@@ -161,6 +180,7 @@ export const useProceduralScroller = <
     getMinItemSize,
     minIndex,
     maxIndex,
+    initialContainerHeight,
   });
   const itemStacks = useMemo(
     () => [itemStackA, itemStackB],
@@ -219,12 +239,26 @@ export const useProceduralScroller = <
   );
   const getRefOrError: UseElementRefMapResult<ItemType>["getRefOrError"] =
     useCallback(
-      (index) => {
+      <RequireNonNull extends boolean>(
+        index: string | number,
+        requireNonNull: RequireNonNull,
+      ) => {
         const ref = getRef(index);
-        if (ref?.current) {
-          return ref;
+        if (ref && !requireNonNull) {
+          return ref as RequireNonNull extends true
+            ? RefObject<ItemType>
+            : RefObject<ItemType | null>;
         }
-        throw new ProceduralScrollerError("Could not find ref", { index, ref });
+        if (ref?.current !== null && requireNonNull) {
+          return ref as RequireNonNull extends true
+            ? RefObject<ItemType>
+            : RefObject<ItemType | null>;
+        }
+        throw new ProceduralScrollerError("Could not find ref", {
+          index,
+          ref,
+          requireNonNull,
+        });
       },
       [getRef],
     );
@@ -441,7 +475,7 @@ export const useProceduralScroller = <
    */
   useEffect(() => {
     if (!secondaryItems || !scrollToIndexInput) return;
-    const itemRef = getRefOrError(scrollToIndexInput.index);
+    const itemRef = getRefOrError(scrollToIndexInput.index, true);
     const item = itemRef.current;
     const container = containerRef?.current;
     if (!item || !container) {
@@ -462,6 +496,7 @@ export const useProceduralScroller = <
         [dimensions.containerAxis === "clientWidth" ? "left" : "top"]:
           scrollPos,
       });
+      scrollToIndexDebounceRef.current = setTimeout(completeScrollToIndex, 100);
     });
   }, [
     getRefOrError,
@@ -470,6 +505,7 @@ export const useProceduralScroller = <
     dimensions,
     maxIndex,
     minIndex,
+    completeScrollToIndex,
   ]);
 
   /*
@@ -481,10 +517,10 @@ export const useProceduralScroller = <
       container: {
         ref: containerRef,
       },
-      rows: mergedIndexes.map((index: number) => {
+      items: mergedIndexes.map((index: number) => {
         return {
           index,
-          ref: getRefOrError(index),
+          ref: getRefOrError(index, false),
         };
       }),
     };
@@ -494,7 +530,7 @@ export const useProceduralScroller = <
       container: {
         ref: containerRef,
       },
-      rows: null,
+      items: null,
     };
   }
 };

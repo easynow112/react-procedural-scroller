@@ -12,7 +12,7 @@ export const useElementRefMap = <
   ElementType extends HTMLElement = HTMLElement,
 >({
   cacheLimit = asPositiveInteger(1),
-}: UseElementRefMapProps = {}): UseElementRefMapResult<ElementType | null> => {
+}: UseElementRefMapProps): UseElementRefMapResult<ElementType> => {
   const elementRefMap = useRef<Map<string, RefObject<ElementType | null>>>(
     new Map(),
   );
@@ -26,15 +26,25 @@ export const useElementRefMap = <
 
   const getRefOrError: UseElementRefMapResult<ElementType>["getRefOrError"] =
     useCallback(
-      (key) => {
+      <RequireNonNull extends boolean>(
+        key: string | number,
+        requireNonNull: RequireNonNull,
+      ) => {
         const ref = elementRefMap.current.get(asElementRefMapKey(key));
-        if (!ref) {
-          throw new ProceduralScrollerError(
-            `A ref with key=${key} does not exist in elementRefMap`,
-            mapToObject(elementRefMap.current),
-          );
+        if (ref && !requireNonNull) {
+          return ref as RequireNonNull extends true
+            ? RefObject<ElementType>
+            : RefObject<ElementType | null>;
         }
-        return ref;
+        if (ref?.current !== null && requireNonNull) {
+          return ref as RequireNonNull extends true
+            ? RefObject<ElementType>
+            : RefObject<ElementType | null>;
+        }
+        throw new ProceduralScrollerError(
+          `A ref with key=${key} does not exist in elementRefMap`,
+          mapToObject(elementRefMap.current),
+        );
       },
       [elementRefMap],
     );
@@ -49,7 +59,7 @@ export const useElementRefMap = <
       while (map.size > cacheLimit) {
         map.delete(map.keys().next().value as string);
       }
-      return getRefOrError(key);
+      return getRefOrError(key, false);
     },
     [cacheLimit, getRefOrError, elementRefMap],
   );
