@@ -137,7 +137,9 @@ export const useProceduralScroller = <
   );
   const scrollResetting = useRef<boolean>(true);
   const containerRef = useRef<ContainerType>(null);
-  const scrollToIndexDebounceRef = useRef<number | null>(null);
+  const scrollToIndexDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
 
   /*
    * State:

@@ -35,7 +35,7 @@ export function useDimensionObserver<ElementType extends HTMLElement>({
           didResize = true;
         }
         if (htmlPropertyIsNumeric(element[dim])) {
-          observedDimensions.current[dim] = element[dim];
+          observedDimensions.current[dim] = element[dim] as number;
         }
       }
       if (!didResize) return;
@@ -43,7 +43,7 @@ export function useDimensionObserver<ElementType extends HTMLElement>({
       const initialDimensions: Partial<ObservedDimensions<ElementType>> = {};
       dimensions.forEach((dim) => {
         if (htmlPropertyIsNumeric(element[dim])) {
-          initialDimensions[dim] = element[dim];
+          initialDimensions[dim] = element[dim] as number;
         }
       });
       observedDimensions.current =
