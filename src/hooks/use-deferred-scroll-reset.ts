@@ -1,7 +1,6 @@
 import { useCallback, useLayoutEffect } from "react";
 import { Scroll } from "../types/scroll";
 import { UseDeferredScrollResetProps } from "../types/hooks/use-deferred-scroll-reset";
-import { ProceduralScrollerError } from "../lib/error";
 import { getScrollLength } from "../lib/scroll";
 
 export function useDeferredScrollReset<
@@ -14,28 +13,22 @@ export function useDeferredScrollReset<
   items,
   getRef,
   dimensions,
+  suppress,
 }: UseDeferredScrollResetProps<ContainerType, ItemType>): void {
   /*
    * Scrolls the container to the specified item with the desired alignment.
    */
   const scrollTo = useCallback(
-    (scroll: Scroll) => {
+    (scroll: Scroll, retry: boolean = false) => {
       const item = getRef(scroll.index)?.current;
       const container = containerRef.current;
       if (!item || !container) {
-        if (items) {
-          throw new ProceduralScrollerError(
-            `Could not execute scrollTo, ${!container ? "container" : "item"} ref is ${!container ? container : item}`,
-            {
-              item,
-              container,
-              scroll,
-              items,
-            },
-          );
-        } else {
-          return;
+        if (!retry) {
+          requestAnimationFrame(() => {
+            scrollTo(scroll, true);
+          });
         }
+        return;
       }
       container[dimensions.scrollLength] = getScrollLength(
         scroll.block,
@@ -51,7 +44,6 @@ export function useDeferredScrollReset<
       dimensions.itemOffset,
       dimensions.scrollLength,
       getRef,
-      items,
       onScrollReset,
     ],
   );
@@ -62,6 +54,7 @@ export function useDeferredScrollReset<
    * Uses `requestAnimationFrame` to defer the scroll adjustment until after the DOM updates.
    */
   useLayoutEffect(() => {
+    if (suppress) return;
     if (!scroll?.current) return;
     const scrollReference = { ...scroll.current };
     requestAnimationFrame(() => {
@@ -69,5 +62,5 @@ export function useDeferredScrollReset<
         scrollTo(scrollReference);
       }
     });
-  }, [scroll, scrollTo, items]);
+  }, [scroll, scrollTo, items, suppress]);
 }

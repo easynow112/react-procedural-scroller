@@ -62,7 +62,6 @@ export function getItems(
   asNonNegativeReal(containerSize);
   asRangeScaledSizes(rangeScaledSizes);
   asScroll(scroll);
-
   // Get index arrays:
   let contentIndexes: Integer[] = [];
   if (scroll.block === "start") {

@@ -14,7 +14,10 @@ import { type Dimensions } from "../types/dimensions";
 import { useDeferredScrollReset } from "./use-deferred-scroll-reset";
 import { RangeScaledSizes } from "../types/range-scaled-sizes";
 import { asRangeScaledSizes } from "../validation/range-scaled-sizes";
-import { asNonNegativeReal } from "../validation/number/non-negative-real";
+import {
+  asNonNegativeReal,
+  isNonNegativeReal,
+} from "../validation/number/non-negative-real";
 import { asInteger } from "../validation/number/integer";
 import {
   ScrollToIndexInput,
@@ -29,6 +32,8 @@ import { UseElementRefMapResult } from "../types/hooks/use-element-ref-map";
 import { ProceduralScrollerError } from "../lib/error";
 import { getScrollLength, scrollToIndexInputToScroll } from "../lib/scroll";
 import { NonNegativeReal } from "../types/number/non-negative-real";
+
+const scrollToIndexDebounceDelay = 100;
 
 export const useProceduralScroller = <
   ContainerType extends HTMLElement,
@@ -47,7 +52,7 @@ export const useProceduralScroller = <
   scrollDirection = "vertical",
   minIndex: minIndexInput,
   maxIndex: maxIndexInput,
-  initialContainerHeight: initialContainerHeightInput,
+  initialContainerSize: initialContainerSizeInput,
 }: UseProceduralScrollerProps): UseProceduralScrollerResult<
   ContainerType,
   ItemType
@@ -58,16 +63,15 @@ export const useProceduralScroller = <
    *    value relative to the container's total height/width.
    * `dimensions` selects DOM scroll properties based on scroll direction, abstracting axis-specific access.
    * `minIndex` / `maxIndex` are the optional bounds of items to render.
-   * `initialContainerHeight` is an optional prop that allows items to render on the first page load
+   * `initialContainerSize` is an optional prop that allows items to render on the first page load
    *    without waiting for the container to mount and be measured.
    */
-  const initialContainerHeight = useMemo((): NonNegativeReal | null => {
-    try {
-      return asNonNegativeReal(initialContainerHeightInput as number);
-    } catch {
-      return null;
+  const initialContainerSize = useMemo((): NonNegativeReal | null => {
+    if (isNonNegativeReal(initialContainerSizeInput as number)) {
+      return asNonNegativeReal(initialContainerSizeInput as number);
     }
-  }, [initialContainerHeightInput]);
+    return null;
+  }, [initialContainerSizeInput]);
   const minIndex = useMemo((): Integer | null => {
     if (typeof minIndexInput === "number") {
       if (typeof maxIndexInput === "number" && minIndexInput > maxIndexInput) {
@@ -127,7 +131,7 @@ export const useProceduralScroller = <
    * `scrollResetting` is used to suppress scroll handlers whilst a list update is in progress.
    * `containerRef` references the container DOM element.
    * `scrollToIndexDebounceRef` stores the timeout ID used to detect the end of smooth-scroll animations: when no
-   *    scroll event occurs for 100ms, the animation is considered complete.
+   *    scroll event occurs for `scrollToIndexDebounceDelay`ms, the animation is considered complete.
    */
   const scroll = useRef<Scroll>(
     asScroll({
@@ -140,6 +144,7 @@ export const useProceduralScroller = <
   const scrollToIndexDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
+  const scrollToIndexInProgressRef = useRef<boolean>(false);
 
   /*
    * State:
@@ -170,7 +175,7 @@ export const useProceduralScroller = <
     getMinItemSize,
     minIndex,
     maxIndex,
-    initialContainerHeight,
+    initialContainerSize,
   });
   const itemStackB = useItemStack<ContainerType, ItemType>({
     dimensions,
@@ -182,7 +187,7 @@ export const useProceduralScroller = <
     getMinItemSize,
     minIndex,
     maxIndex,
-    initialContainerHeight,
+    initialContainerSize,
   });
   const itemStacks = useMemo(
     () => [itemStackA, itemStackB],
@@ -312,15 +317,14 @@ export const useProceduralScroller = <
         { scrollToIndexInput },
       );
     }
-    scroll.current = {
-      block: scrollToIndexInput.block,
-      index: asInteger(scrollToIndexInput.index),
-    };
     scrollResetting.current = true;
-    setItems(null); // Since we also update itemStackPointer this actually sets secondaryItems
-    setItemStackPointer((prev) => Number(!prev) as 0 | 1);
+    scrollToIndexInProgressRef.current = false;
+    setItemStackPointer((prev) => {
+      itemStacks[Number(prev)].setItems(null);
+      return Number(!prev) as 0 | 1;
+    });
     setScrollToIndexInput(null);
-  }, [scrollToIndexInput, setItems]);
+  }, [itemStacks, scrollToIndexInput]);
 
   /*
    * Container onScroll logic:
@@ -330,13 +334,13 @@ export const useProceduralScroller = <
    * of continuous scrolling.
    */
   const containerScrollHandler = useCallback(
-    (container: ContainerType): void => {
+    (container: ContainerType, ev: Event, isRetry: boolean = false): void => {
       if (secondaryItems) {
         if (typeof scrollToIndexDebounceRef.current === "number")
           clearTimeout(scrollToIndexDebounceRef.current);
         scrollToIndexDebounceRef.current = setTimeout(
           completeScrollToIndex,
-          100,
+          scrollToIndexDebounceDelay,
         );
         return;
       }
@@ -348,12 +352,12 @@ export const useProceduralScroller = <
       )?.current;
       const endContentItem = getRef(items.indexes[endContentIndex])?.current;
       if (!startContentItem || !endContentItem) {
-        throw new ProceduralScrollerError(`Could not find contentItem`, {
-          startContentIndex,
-          startContentItem,
-          endContentIndex,
-          endContentItem,
-        });
+        if (!isRetry) {
+          requestAnimationFrame(() =>
+            containerScrollHandler(container, ev, true),
+          );
+        }
+        return;
       }
       if (
         (typeof minIndex !== "number" || mergedIndexes[0] > minIndex) &&
@@ -416,6 +420,7 @@ export const useProceduralScroller = <
     items,
     getRef,
     dimensions,
+    suppress: scrollToIndexInProgressRef.current,
   });
 
   /*
@@ -445,7 +450,9 @@ export const useProceduralScroller = <
         block: input.block,
         index: targetIndex,
       });
+      scroll.current = targetScroll;
       scrollResetting.current = true;
+      scrollToIndexInProgressRef.current = true;
       setScrollToIndexInput({
         ...input,
         ...targetScroll,
@@ -486,20 +493,20 @@ export const useProceduralScroller = <
         { container, item },
       );
     }
-    requestAnimationFrame(() => {
-      const scrollPos = getScrollLength(
-        scrollToIndexInput.block,
-        container[dimensions.containerAxis],
-        item[dimensions.containerAxis],
-        item[dimensions.itemOffset],
-      );
-      container.scrollTo({
-        behavior: scrollToIndexInput.behavior || "auto",
-        [dimensions.containerAxis === "clientWidth" ? "left" : "top"]:
-          scrollPos,
-      });
-      scrollToIndexDebounceRef.current = setTimeout(completeScrollToIndex, 100);
+    const scrollPos = getScrollLength(
+      scrollToIndexInput.block,
+      container[dimensions.containerAxis],
+      item[dimensions.containerAxis],
+      item[dimensions.itemOffset],
+    );
+    container.scrollTo({
+      behavior: scrollToIndexInput.behavior || "auto",
+      [dimensions.containerAxis === "clientWidth" ? "left" : "top"]: scrollPos,
     });
+    scrollToIndexDebounceRef.current = setTimeout(
+      completeScrollToIndex,
+      scrollToIndexDebounceDelay,
+    );
   }, [
     getRefOrError,
     secondaryItems,

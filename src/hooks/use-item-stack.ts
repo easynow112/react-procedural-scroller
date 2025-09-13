@@ -21,22 +21,22 @@ export function useItemStack<
   getMinItemSize,
   minIndex,
   maxIndex,
-  initialContainerHeight,
+  initialContainerSize,
 }: UseItemStackProps<ContainerType>): UseItemStackResult<ItemType> {
   /*
    * State:
    * `items` contains the array of indexes to be rendered.
    */
   const [items, setItems] = useState<Items | null>(() => {
-    const containerHeight =
+    const containerSize =
       typeof containerRef?.current?.[dimensions.containerAxis] === "number"
         ? asNonNegativeReal(containerRef.current[dimensions.containerAxis])
-        : typeof initialContainerHeight === "number"
-          ? asNonNegativeReal(initialContainerHeight)
+        : typeof initialContainerSize === "number"
+          ? asNonNegativeReal(initialContainerSize)
           : null;
-    return scroll && typeof containerHeight === "number"
+    return scroll && typeof containerSize === "number"
       ? getItems(
-          containerHeight,
+          containerSize,
           rangeScaledSizes,
           scroll,
           getMinItemSize,

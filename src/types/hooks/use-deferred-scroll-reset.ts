@@ -11,4 +11,5 @@ export type UseDeferredScrollResetProps<ContainerType, ItemType> = {
   items: Items | null;
   getRef: UseElementRefMapResult<ItemType>["getRef"];
   dimensions: Dimensions;
+  suppress: boolean;
 };

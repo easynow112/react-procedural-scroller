@@ -14,7 +14,7 @@ export type UseItemStackProps<ContainerType> = {
   getMinItemSize: (index: number) => number;
   minIndex: Integer | null;
   maxIndex: Integer | null;
-  initialContainerHeight: NonNegativeReal | null;
+  initialContainerSize: NonNegativeReal | null;
 };
 
 export type UseItemStackResult<ItemType> = {

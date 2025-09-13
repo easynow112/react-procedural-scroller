@@ -6,7 +6,7 @@ A headless React hook for building infinite scroller components that display pro
 - 🎯 A `scrollToIndex` API for instant or smooth programmatic scrolling.
 - 📦 Lightweight ~ 7.3kB when gzipped.
 - 🛠 Zero dependencies.
-- ✅ Unit tested and rigorously vetted for rock-solid reliability.
+- 🎭 E2E tested and rigorously vetted for rock-solid reliability.
 
 ---
 

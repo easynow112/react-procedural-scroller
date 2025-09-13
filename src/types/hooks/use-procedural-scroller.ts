@@ -18,7 +18,7 @@ export type UseProceduralScrollerProps = {
     end: number;
   };
   scrollDirection?: "vertical" | "horizontal";
-  initialContainerHeight?: number;
+  initialContainerSize?: number;
 };
 
 export type UseProceduralScrollerResult<ContainerType, ItemType> = {
