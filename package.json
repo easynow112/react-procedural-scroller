@@ -1,0 +1,91 @@
+{
+  "name": "react-procedural-scroller",
+  "version": "0.0.0",
+  "description": "A headless React hook for building infinite scroller components that display procedurally generated data, perfect for use cases like date scrollers, where row data is generated dynamically rather than fetched from a dataset. Notable features include: full row virtualization for buttery-smooth performance, support for vertical and horizontal layouts, and a scrollToIndex API for instant or smooth programmatic scrolling.",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=16"
+  },
+  "scripts": {
+    "build": "rm -rf dist && tsc --noEmit && tsup",
+    "format": "npx prettier . --write",
+    "lint": "eslint src",
+    "test-app:start": "npm --prefix tests/app run build && npm --prefix tests/app run preview",
+    "test-app:dev": "npm --prefix tests/app run dev",
+    "test:e2e": "npx playwright test",
+    "test:e2e:make": "npx tests/playwright codegen",
+    "test:unit": "vitest run",
+    "test": "npm run test:unit && npm run test:e2e",
+    "size": "size-limit"
+  },
+  "size-limit": [
+    {
+      "path": "dist/index.js"
+    }
+  ],
+  "sideEffects": false,
+  "author": "easynow112",
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/easynow112/react-procedural-scroller.git"
+  },
+  "bugs": {
+    "url": "https://github.com/easynow112/react-procedural-scroller/issues"
+  },
+  "keywords": [
+    "react",
+    "procedural-scroller",
+    "date-scroller",
+    "infinite-scroller",
+    "virtualized",
+    "bi-directional",
+    "multi-directional",
+    "horizontal-scroll",
+    "vertical-scroll",
+    "scroll-into-view",
+    "scroll-to",
+    "headless",
+    "hook"
+  ],
+  "homepage": "https://github.com/easynow112/react-procedural-scroller",
+  "peerDependencies": {
+    "react": ">=16.8.0",
+    "react-dom": ">=16.8.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.32.0",
+    "@playwright/test": "^1.55.0",
+    "@size-limit/preset-small-lib": "^11.2.0",
+    "@testing-library/react": "^16.3.0",
+    "@types/node": "^24.3.1",
+    "@types/react": "^19.1.8",
+    "@types/react-dom": "^19.1.6",
+    "eslint": "^9.32.0",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "jsdom": "^27.0.0",
+    "prettier": "^3.6.2",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "size-limit": "^11.2.0",
+    "tsup": "^8.5.0",
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.38.0",
+    "vitest": "^3.2.4"
+  }
+}
